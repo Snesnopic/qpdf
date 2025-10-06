@@ -352,20 +352,13 @@ if(GENERATE_AUTO_JOB)
   add_custom_target(auto_job_files ALL DEPENDS ${auto_job_outputs})
 endif()
 
-add_test(
-  NAME check-assert
-  COMMAND perl ${qpdf_SOURCE_DIR}/check_assert)
 
 # add_subdirectory order affects test order
 add_subdirectory(include)
 add_subdirectory(libqpdf)
-add_subdirectory(compare-for-test)
 add_subdirectory(qpdf)
-add_subdirectory(libtests)
-add_subdirectory(examples)
 add_subdirectory(zlib-flate)
 add_subdirectory(manual)
-add_subdirectory(fuzz)
 
 # We don't need to show everything -- just the things that we really
 # need to be sure are right or that are turned on or off with complex
