@@ -22,7 +22,7 @@ foreach(B qpdf test_unicode_filenames fix-qdf test_shell_glob)
 endforeach()
 
 
-install(TARGETS qpdf fix-qdf
+install(TARGETS qpdf
   TYPE RUNTIME
   COMPONENT ${COMPONENT_CLI})
 
