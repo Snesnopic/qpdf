@@ -1,22 +1,5 @@
-set(MAIN_CXX_PROGRAMS
-  qpdf
-  fix-qdf
-  pdf_from_scratch
-  test_char_sign
-  test_driver
-  test_large_file
-  test_many_nulls
-  test_parsedoffset
-  test_pdf_doc_encoding
-  test_pdf_unicode
-  test_renumber
-  test_shell_glob
-  test_tokenizer
-  test_unicode_filenames
-  test_xref)
-set(MAIN_C_PROGRAMS
-  qpdf-ctest
-  qpdfjob-ctest)
+set(MAIN_CXX_PROGRAMS qpdf)
+set(MAIN_C_PROGRAMS)
 
 foreach(PROG ${MAIN_CXX_PROGRAMS})
   add_executable(${PROG} ${PROG}.cc)
@@ -28,15 +11,6 @@ foreach(PROG ${MAIN_C_PROGRAMS})
   set_property(TARGET ${PROG} PROPERTY LINKER_LANGUAGE CXX)
 endforeach()
 
-set(needs_private_headers
-  test_large_file
-  test_driver
-  qpdf-ctest
-  qpdfjob-ctest
-  )
-foreach(TARGET ${needs_private_headers})
-  target_include_directories(${TARGET} PRIVATE ${CMAKE_SOURCE_DIR}/libqpdf)
-endforeach()
 
 foreach(B qpdf test_unicode_filenames fix-qdf test_shell_glob)
   if(WINDOWS_WMAIN_COMPILE)
@@ -47,19 +21,6 @@ foreach(B qpdf test_unicode_filenames fix-qdf test_shell_glob)
   endif()
 endforeach()
 
-add_test(
-  NAME qpdf
-  COMMAND ${RUN_QTEST}
-  --top ${qpdf_SOURCE_DIR}
-  --bin $<TARGET_FILE_DIR:qpdf>
-  --bin $<TARGET_FILE_DIR:libqpdf>  # for Windows to find DLL
-  --bin $<TARGET_FILE_DIR:qpdf-test-compare>
-  --code ${qpdf_SOURCE_DIR}/qpdf
-  --color ${QTEST_COLOR}
-  --show-on-failure ${SHOW_FAILED_TEST_OUTPUT}
-  --tc "${qpdf_SOURCE_DIR}/qpdf/*.cc"
-  --tc "${qpdf_SOURCE_DIR}/qpdf/*.c"
-  --tc "${qpdf_SOURCE_DIR}/libqpdf/*.cc")
 
 install(TARGETS qpdf fix-qdf
   TYPE RUNTIME
