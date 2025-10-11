@@ -13,11 +13,13 @@ endforeach()
 
 
 foreach(B qpdf test_unicode_filenames fix-qdf test_shell_glob)
-  if(WINDOWS_WMAIN_COMPILE)
-    target_compile_options(${B} PRIVATE ${WINDOWS_WMAIN_COMPILE})
-  endif()
-  if(WINDOWS_WMAIN_LINK)
-    target_link_options(${B} PRIVATE ${WINDOWS_WMAIN_LINK})
+  if(TARGET ${B})
+    if(WINDOWS_WMAIN_COMPILE)
+      target_compile_options(${B} PRIVATE ${WINDOWS_WMAIN_COMPILE})
+    endif()
+    if(WINDOWS_WMAIN_LINK)
+      target_link_options(${B} PRIVATE ${WINDOWS_WMAIN_LINK})
+    endif()
   endif()
 endforeach()
 

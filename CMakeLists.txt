@@ -60,18 +60,18 @@ option(BUILD_DOC "Build documentation" ${default_BUILD_DOC})
 # on in MAINTAINER_MODE and is harmless if BUILD_DOC is off.
 CMAKE_DEPENDENT_OPTION(
   BUILD_DOC_HTML "Build HTML documentation"
-  ON "BUILD_DOC;NOT MAINTAINER_MODE" ON)
+  ON "BUILD_DOC;NOT MAINTAINER_MODE" OFF)
 CMAKE_DEPENDENT_OPTION(
   BUILD_DOC_PDF "Build PDF documentation"
-  ON "BUILD_DOC;NOT MAINTAINER_MODE" ON)
+  ON "BUILD_DOC;NOT MAINTAINER_MODE" OFF)
 CMAKE_DEPENDENT_OPTION(
   BUILD_DOC_DIST "Create distribution of manual" ON
   "BUILD_DOC_PDF;BUILD_DOC_HTML" OFF)
 
 option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
-option(BUILD_SHARED_LIBS "Build qpdf shared libraries" ON)
+option(BUILD_SHARED_LIBS "Build qpdf shared libraries" OFF)
 option(BUILD_STATIC_LIBS "Build qpdf static libraries" ON)
-option(QTEST_COLOR "Whether qtest's output should be in color" ON)
+option(QTEST_COLOR "Whether qtest's output should be in color" OFF)
 option(USE_INSECURE_RANDOM "Use insecure random numbers" OFF)
 option(SKIP_OS_SECURE_RANDOM
   "Suppress use of OS-provided secure random numbers" OFF)
@@ -84,7 +84,7 @@ option(OSS_FUZZ "Specific build configuration for the oss-fuzz project" OFF)
 option(USE_IMPLICIT_CRYPTO "Enable any available external crypto provider" ON)
 CMAKE_DEPENDENT_OPTION(
   ALLOW_CRYPTO_NATIVE "Allow native crypto as as fallback" ON
-  "USE_IMPLICIT_CRYPTO" OFF)
+  "USE_IMPLICIT_CRYPTO" ON)
 CMAKE_DEPENDENT_OPTION(
   REQUIRE_CRYPTO_NATIVE "Require native crypto provider" OFF
   "NOT MAINTAINER_MODE; NOT CI_MODE" ON)
@@ -101,9 +101,9 @@ option(ZOPFLI, "Use zopfli for zlib-compatible compression")
 # install it elsewhere.
 option(INSTALL_MANUAL "Install documentation" OFF)
 
-option(INSTALL_PKGCONFIG "Install pkgconfig file" ON)
-option(INSTALL_CMAKE_PACKAGE "Install cmake package files" ON)
-option(INSTALL_EXAMPLES "Install example files" ON)
+option(INSTALL_PKGCONFIG "Install pkgconfig file" OFF)
+option(INSTALL_CMAKE_PACKAGE "Install cmake package files" OFF)
+option(INSTALL_EXAMPLES "Install example files" OFF)
 
 option(FUTURE "Include ABI-breaking changes CONSIDERED for the next major release" OFF)
 option(CXX_NEXT "Build with next C++ standard version" OFF)
