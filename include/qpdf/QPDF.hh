@@ -1,5 +1,5 @@
 // Copyright (c) 2005-2021 Jay Berkenbilt
-// Copyright (c) 2022-2025 Jay Berkenbilt and Manfred Holger
+// Copyright (c) 2022-2026 Jay Berkenbilt and Manfred Holger
 //
 // This file is part of qpdf.
 //
@@ -37,7 +37,6 @@
 #include <qpdf/Buffer.hh>
 #include <qpdf/InputSource.hh>
 #include <qpdf/PDFVersion.hh>
-#include <qpdf/QIntC.hh>
 #include <qpdf/QPDFExc.hh>
 #include <qpdf/QPDFObjGen.hh>
 #include <qpdf/QPDFObjectHandle.hh>
@@ -438,6 +437,9 @@ class QPDF
     // Encryption support
 
     enum encryption_method_e { e_none, e_unknown, e_rc4, e_aes, e_aesv3 };
+
+    // To be removed from the public API in qpdf 13. See
+    // <https:manual.qpdf.org/release-notes.html#r12-3-0-deprecate>.
     class EncryptionData
     {
       public:
@@ -558,8 +560,10 @@ class QPDF
         bool use_aes,
         int encryption_V,
         int encryption_R);
-    QPDF_DLL
-    static std::string
+
+    // To be removed in qpdf 13. See <https:manual.qpdf.org/release-notes.html#r12-3-0-deprecate>.
+    [[deprecated("to be removed in qpdf 13")]]
+    QPDF_DLL static std::string
     compute_encryption_key(std::string const& password, EncryptionData const& data);
 
     QPDF_DLL
@@ -743,26 +747,11 @@ class QPDF
 
     class ObjCache;
     class EncryptionParameters;
-    class ForeignStreamData;
-    class CopiedStreamDataProvider;
     class StringDecrypter;
     class ResolveRecorder;
     class JSONReactor;
 
-    void stopOnError(std::string const& message);
-    inline void
-    no_ci_stop_if(bool condition, std::string const& message, std::string const& context = {});
     void removeObject(QPDFObjGen og);
-    static QPDFExc damagedPDF(
-        InputSource& input,
-        std::string const& object,
-        qpdf_offset_t offset,
-        std::string const& message);
-    QPDFExc damagedPDF(InputSource& input, qpdf_offset_t offset, std::string const& message);
-    QPDFExc damagedPDF(std::string const& object, qpdf_offset_t offset, std::string const& message);
-    QPDFExc damagedPDF(std::string const& object, std::string const& message);
-    QPDFExc damagedPDF(qpdf_offset_t offset, std::string const& message);
-    QPDFExc damagedPDF(std::string const& message);
 
     // Calls finish() on the pipeline when done but does not delete it
     bool pipeStreamData(
@@ -774,8 +763,6 @@ class QPDF
         Pipeline* pipeline,
         bool suppress_warnings,
         bool will_retry);
-    bool
-    pipeForeignStreamData(ForeignStreamData&, Pipeline*, bool suppress_warnings, bool will_retry);
     static bool pipeStreamData(
         std::shared_ptr<QPDF::EncryptionParameters> encp,
         std::shared_ptr<InputSource> file,
@@ -804,57 +791,8 @@ class QPDF
         bool is_root_metadata,
         std::unique_ptr<Pipeline>& heap);
 
-    // Methods to support object copying
-    void copyStreamData(QPDFObjectHandle dest_stream, QPDFObjectHandle src_stream);
-
-    struct HPageOffsetEntry;
-    struct HPageOffset;
-    struct HSharedObjectEntry;
-    struct HSharedObject;
-    struct HGeneric;
-    struct LinParameters;
-    struct CHPageOffsetEntry;
-    struct CHPageOffset;
-    struct CHSharedObjectEntry;
-    struct CHSharedObject;
-    class ObjUser;
-    struct UpdateObjectMapsFrame;
-    class PatternFinder;
-
-    // Methods to support pattern finding
-    static bool validatePDFVersion(char const*&, std::string& version);
-    bool findHeader();
-    bool findStartxref();
-    bool findEndstream();
-
     // JSON import
     void importJSON(std::shared_ptr<InputSource>, bool must_be_complete);
-
-    // Type conversion helper methods
-    template <typename T>
-    static qpdf_offset_t
-    toO(T const& i)
-    {
-        return QIntC::to_offset(i);
-    }
-    template <typename T>
-    static size_t
-    toS(T const& i)
-    {
-        return QIntC::to_size(i);
-    }
-    template <typename T>
-    static int
-    toI(T const& i)
-    {
-        return QIntC::to_int(i);
-    }
-    template <typename T>
-    static unsigned long long
-    toULL(T const& i)
-    {
-        return QIntC::to_ulonglong(i);
-    }
 
     class Members;
 

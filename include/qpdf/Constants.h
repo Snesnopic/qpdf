@@ -1,5 +1,5 @@
 /* Copyright (c) 2005-2021 Jay Berkenbilt
- * Copyright (c) 2022-2025 Jay Berkenbilt and Manfred Holger
+ * Copyright (c) 2022-2026 Jay Berkenbilt and Manfred Holger
  *
  * This file is part of qpdf.
  *
@@ -242,6 +242,80 @@ enum qpdf_page_label_e {
     pl_alpha_upper,
     pl_roman_lower,
     pl_roman_upper,
+};
+
+/**
+ * @enum    qpdf_result_e
+ * @brief   Enum representing result codes for qpdf C-API functions.
+ *
+ *          Results <= qpdf_r_no_warn indicate success without warnings,
+ *          qpdf_r_no_warn < result <= qpdf_r_success indicates success with warnings, and
+ *          qpdf_r_success < result indicates failure.
+ */
+enum qpdf_result_e {
+    /* success */
+    qpdf_r_ok = 0,
+    qpdf_r_no_warn = 0xff,   /// any result <= qpdf_no_warn indicates success without warning
+    qpdf_r_success = 0xffff, /// any result <= qpdf_r_success indicates success
+    /* failure */
+    qpdf_r_bad_parameter = 0x10000,
+
+    qpdf_r_no_warn_mask = 0x7fffff00,
+    qpdf_r_success_mask = 0x7fff0000,
+};
+
+/**
+ * @enum    qpdf_param_e
+ * @brief   This enumeration defines various parameters and configuration options for qpdf C-API
+ *          functions.
+ *
+ *          The enum values are grouped into sections based on their functionality, such as global
+ *          options or global limits. For the meaning of individual parameters see `qpdf/global.cc`
+ */
+enum qpdf_param_e {
+    /* global state */
+    qpdf_p_limit_errors = 0x10020,
+
+    /* global options */
+    qpdf_p_inspection_mode = 0x11000,
+    qpdf_p_fuzz_mode = 0x11010,
+    qpdf_p_default_limits = 0x11100,
+
+    /* stream and filter options */
+    qpdf_p_dct_throw_on_corrupt_data = 0x11400,
+
+    /* global limits */
+
+    /* document limits */
+    qpdf_p_doc_max_warnings = 0x12000,
+
+    /* parser limits */
+    qpdf_p_parser_max_nesting = 0x13000,
+    qpdf_p_parser_max_errors,
+    qpdf_p_parser_max_container_size,
+    qpdf_p_parser_max_container_size_damaged,
+
+    /* stream and filter limits */
+    qpdf_p_max_stream_filters = 0x14000,
+
+    /* stream and filter limits - dct limits */
+    qpdf_p_dct_max_memory = 0x14020,
+    qpdf_p_dct_max_progressive_scans,
+
+    /* stream and filter limits - flate limits */
+    qpdf_p_flate_max_memory = 0x14030,
+
+    /* stream and filter limits - png limits */
+    qpdf_p_png_max_memory = 0x14040,
+
+    /* stream and filter limits - runlength limits */
+    qpdf_p_run_length_max_memory = 0x14050,
+
+    /* stream and filter limits - tiff limits */
+    qpdf_p_tiff_max_memory = 0x14060,
+
+    /* next section = 0x20000 */
+    qpdf_enum_max = 0x7fffffff,
 };
 
 #endif /* QPDFCONSTANTS_H */

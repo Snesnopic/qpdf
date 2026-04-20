@@ -1,5 +1,5 @@
 // Copyright (c) 2005-2021 Jay Berkenbilt
-// Copyright (c) 2022-2025 Jay Berkenbilt and Manfred Holger
+// Copyright (c) 2022-2026 Jay Berkenbilt and Manfred Holger
 //
 // This file is part of qpdf.
 //
@@ -120,13 +120,6 @@ class QPDFPageDocumentHelper: public QPDFDocumentHelper
     void flattenAnnotations(int required_flags = 0, int forbidden_flags = an_invisible | an_hidden);
 
   private:
-    void flattenAnnotationsForPage(
-        QPDFPageObjectHelper& page,
-        QPDFObjectHandle& resources,
-        QPDFAcroFormDocumentHelper& afdh,
-        int required_flags,
-        int forbidden_flags);
-
     class Members;
 
     std::shared_ptr<Members> m;

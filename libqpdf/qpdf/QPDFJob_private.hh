@@ -5,6 +5,8 @@
 
 #include <qpdf/ClosedFileInputSource.hh>
 #include <qpdf/QPDFLogger.hh>
+#include <qpdf/QPDFWriter_private.hh>
+#include <qpdf/QPDF_private.hh>
 
 // A selection of pages from a single input PDF to be included in the output. This corresponds to a
 // single clause in the --pages option.
@@ -27,6 +29,7 @@ struct QPDFJob::Selection
     std::pair<const std::string, QPDFJob::Input>* in_entry{nullptr};
     std::string range; // An empty range means all pages.
     std::vector<int> selected_pages;
+    bool password_provided{false};
 };
 
 // A single input PDF.
@@ -35,7 +38,7 @@ struct QPDFJob::Selection
 // filename.  This is a documented work-around.
 struct QPDFJob::Input
 {
-    void initialize(Inputs& in, QPDF* qpdf = nullptr);
+    void initialize(QPDFJob& job, Inputs& in, QPDF* qpdf = nullptr);
 
     std::string password;
     std::unique_ptr<QPDF> qpdf_p;
@@ -54,12 +57,8 @@ struct QPDFJob::Inputs
     // These default values are duplicated in help and docs.
     static int constexpr DEFAULT_KEEP_FILES_OPEN_THRESHOLD = 200;
 
-    Inputs(QPDFJob& job) :
-        job(job)
-    {
-    }
-    void process(std::string const& filename, QPDFJob::Input& file_spec);
-    void process_all();
+    void process(QPDFJob& job, std::string const& filename, QPDFJob::Input& file_spec);
+    void process_all(QPDFJob& job);
 
     // Destroy all owned QPDF objects. Return false if any of the QPDF objects recorded warnings.
     bool clear();
@@ -88,9 +87,6 @@ struct QPDFJob::Inputs
     std::vector<Selection> selections;
 
     bool any_page_labels{false};
-
-  private:
-    QPDFJob& job;
 };
 
 struct QPDFJob::RotationSpec
@@ -148,9 +144,8 @@ class QPDFJob::Members
     friend class QPDFJob;
 
   public:
-    Members(QPDFJob& job) :
-        log(QPDFLogger::defaultLogger()),
-        inputs(job)
+    Members() :
+        log(d_cfg.log())
     {
     }
     Members(Members const&) = delete;
@@ -167,23 +162,22 @@ class QPDFJob::Members
     static int constexpr DEFAULT_OI_MIN_AREA = 16384;
     static int constexpr DEFAULT_II_MIN_BYTES = 1024;
 
+    qpdf::Doc::Config d_cfg;
+    qpdf::Writer::Config w_cfg;
     std::shared_ptr<QPDFLogger> log;
     std::string message_prefix{"qpdf"};
     bool warnings{false};
     unsigned long encryption_status{0};
     bool verbose{false};
     std::string password;
-    bool linearize{false};
     bool decrypt{false};
     bool remove_restrictions{false};
     int split_pages{0};
     bool progress{false};
     std::function<void(int)> progress_handler{nullptr};
-    bool suppress_warnings{false};
     bool warnings_exit_zero{false};
     bool copy_encryption{false};
     bool encrypt{false};
-    bool password_is_hex_key{false};
     bool suppress_password_recovery{false};
     password_mode_e password_mode{pm_auto};
     bool allow_insecure{false};
@@ -206,27 +200,9 @@ class QPDFJob::Members
     bool force_R5{false};
     bool cleartext_metadata{false};
     bool use_aes{false};
-    bool stream_data_set{false};
-    qpdf_stream_data_e stream_data_mode{qpdf_s_compress};
-    bool compress_streams{true};
-    bool compress_streams_set{false};
-    bool recompress_flate{false};
-    bool recompress_flate_set{false};
     int compression_level{-1};
     int jpeg_quality{-1};
-    qpdf_stream_decode_level_e decode_level{qpdf_dl_generalized};
-    bool decode_level_set{false};
-    bool normalize_set{false};
-    bool normalize{false};
-    bool suppress_recovery{false};
-    bool object_stream_set{false};
-    qpdf_object_stream_e object_stream_mode{qpdf_o_preserve};
-    bool ignore_xref_streams{false};
-    bool qdf_mode{false};
-    bool preserve_unreferenced_objects{false};
     remove_unref_e remove_unreferenced_page_resources{re_auto};
-    bool newline_before_endstream{false};
-    std::string linearize_pass1;
     bool coalesce_contents{false};
     bool flatten_annotations{false};
     int flatten_annotations_required{0};
@@ -236,10 +212,7 @@ class QPDFJob::Members
     std::string min_version;
     std::string force_version;
     bool show_npages{false};
-    bool deterministic_id{false};
-    bool static_id{false};
     bool static_aes_iv{false};
-    bool suppress_original_object_id{false};
     bool show_encryption{false};
     bool show_encryption_key{false};
     bool check_linearization{false};
@@ -270,6 +243,7 @@ class QPDFJob::Members
     bool optimize_images{false};
     bool externalize_inline_images{false};
     bool keep_inline_images{false};
+    bool remove_acroform{false};
     bool remove_info{false};
     bool remove_metadata{false};
     bool remove_page_labels{false};

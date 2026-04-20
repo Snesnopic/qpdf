@@ -3,6 +3,8 @@
 #include <qpdf/Pl_Buffer.hh>
 #include <qpdf/QPDFSystemError.hh>
 #include <qpdf/QUtil.hh>
+#include <qpdf/Util.hh>
+
 #include <climits>
 #include <cstdio>
 #include <cstring>
@@ -367,6 +369,17 @@ check_analyze(std::string const& str, bool has8bit, bool utf8, bool utf16)
 }
 
 void
+explicit_utf8_test()
+{
+    // cSpell:ignore xbfnot xbenot
+    assert(QUtil::is_explicit_utf8("\xef\xbb\xbfnot empty"));
+    assert(QUtil::is_explicit_utf8("\xef\xbb\xbf"));
+    assert(!QUtil::is_explicit_utf8("\xef\xbb\xbenot explicit"));
+    assert(!QUtil::is_explicit_utf8("\xef\xbe\xbfnot explicit"));
+    assert(!QUtil::is_explicit_utf8("\xee\xbb\xbfnot explicit"));
+}
+
+void
 print_alternatives(std::string const& str)
 {
     std::vector<std::string> result = QUtil::possible_repaired_encodings(str);
@@ -432,7 +445,7 @@ transcoding_test()
     std::string other_to_utf8;
     assert(!QUtil::utf8_to_pdf_doc(other_utf8, other_to_utf8));
     std::cout << other_to_utf8 << '\n';
-    std::cout << "done other characters" << '\n';
+    std::cout << "done other characters\n";
     // These valid UTF8 strings when converted to PDFDoc would end up
     // with a byte sequence that would be recognized as UTF-8 or
     // UTF-16 rather than PDFDoc. A special case is required to store
@@ -733,6 +746,29 @@ memory_usage_test()
     std::cout << "memory usage okay" << '\n';
 }
 
+void
+error_handler_test()
+{
+    qpdf::util::assertion(true, "msg1");
+    try {
+        qpdf::util::assertion(false, "msg2");
+    } catch (std::logic_error const& e) {
+        std::cout << "caught exception: " << e.what() << '\n';
+    }
+    qpdf::util::internal_error_if(false, "msg3");
+    try {
+        qpdf::util::internal_error_if(true, "msg4");
+    } catch (std::logic_error const& e) {
+        std::cout << "caught exception: " << e.what() << '\n';
+    }
+    qpdf::util::no_ci_rt_error_if(false, "msg5");
+    try {
+        qpdf::util::no_ci_rt_error_if(true, "msg6");
+    } catch (std::runtime_error const& e) {
+        std::cout << "caught exception: " << e.what() << '\n';
+    }
+}
+
 int
 main(int argc, char* argv[])
 {
@@ -747,6 +783,7 @@ main(int argc, char* argv[])
         getenv_test();
         std::cout << "---- utf8" << '\n';
         to_utf8_test();
+        explicit_utf8_test();
         std::cout << "---- utf16" << '\n';
         to_utf16_test();
         std::cout << "---- utf8_to_ascii" << '\n';
@@ -771,6 +808,8 @@ main(int argc, char* argv[])
         is_long_long_test();
         std::cout << "---- memory usage" << '\n';
         memory_usage_test();
+        std::cout << "---- error handlers" << '\n';
+        error_handler_test();
     } catch (std::exception& e) {
         std::cout << "unexpected exception: " << e.what() << '\n';
     }

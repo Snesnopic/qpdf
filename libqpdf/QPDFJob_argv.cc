@@ -31,6 +31,7 @@ namespace
         std::shared_ptr<QPDFJob::Config> c_main;
         std::shared_ptr<QPDFJob::CopyAttConfig> c_copy_att;
         std::shared_ptr<QPDFJob::AttConfig> c_att;
+        std::shared_ptr<QPDFJob::GlobalConfig> c_global;
         std::shared_ptr<QPDFJob::PagesConfig> c_pages;
         std::shared_ptr<QPDFJob::UOConfig> c_uo;
         std::shared_ptr<QPDFJob::EncConfig> c_enc;
@@ -140,7 +141,7 @@ ArgParser::argCopyright()
         << " version " << QPDF::QPDFVersion() << "\n"
         << "\n"
         << "Copyright (c) 2005-2021 Jay Berkenbilt\n"
-        << "Copyright (c) 2022-2025 Jay Berkenbilt and Manfred Holger\n"
+        << "Copyright (c) 2022-2026 Jay Berkenbilt and Manfred Holger\n"
         << "\n"
         << "qpdf is licensed under the Apache License, Version 2.0 (the \"License\");\n"
         << "you may not use this file except in compliance with the License.\n"
@@ -415,6 +416,21 @@ ArgParser::argEndSetPageLabels()
 {
     c_main->setPageLabels(accumulated_args);
     accumulated_args.clear();
+}
+
+void
+ArgParser::argGlobal()
+{
+    accumulated_args.clear();
+    c_global = c_main->global();
+    ap.selectOptionTable(O_GLOBAL);
+}
+
+void
+ArgParser::argEndGlobal()
+{
+    c_global->endGlobal();
+    c_global = nullptr;
 }
 
 void

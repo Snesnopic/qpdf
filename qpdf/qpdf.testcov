@@ -27,12 +27,6 @@ main QTest stream 0
 QPDF lin write nshared_total > nshared_first_page 1
 QPDFWriter encrypted hint stream 0
 QPDF xref gen > 0 1
-QPDF startxref more than 1024 before end 0
-QPDFParser bad brace 0
-QPDFParser bad brace in parseRemainder 0
-QPDFParser bad array close 0
-QPDFParser bad array close in parseRemainder 0
-QPDFParser bad dictionary close 0
 QPDFTokenizer bad ) 0
 QPDFTokenizer bad > 0
 QPDFTokenizer bad hexstring character 0
@@ -46,7 +40,6 @@ QPDFObjectHandle copy stream 1
 QPDF ignoring XRefStm in trailer 0
 SF_FlateLzwDecode PNG filter 0
 QPDF xref /Index is array 1
-QPDFWriter encrypt object stream 0
 QPDF exclude indirect length 0
 QPDF exclude encryption dictionary 0
 QPDF_Stream pipeStreamData with null pipeline 0
@@ -99,7 +92,6 @@ qpdf-c called qpdf_set_static_aes_IV 0
 qpdf-c called qpdf_has_error 0
 qpdf-c called qpdf_get_qpdf_version 0
 QPDF_Stream pipe replaced stream data 0
-QPDF_Stream provider length mismatch 0
 QPDFObjectHandle newStream 0
 QPDFObjectHandle newStream with data 0
 QPDFObjectHandle prepend page contents 0
@@ -121,16 +113,12 @@ QPDF insert page 2
 QPDF insert indirect page 0
 QPDF_Stream ERR shallow copy stream 0
 QPDFObjectHandle newStream with string 0
-QPDF_Stream provider length not provided 0
-QPDF_Stream unknown stream length 0
 QPDF replaceReserved 0
 QPDFWriter copy use_aes 1
-QPDFParser indirect without context 0
 QPDFObjectHandle trailing data in parse 0
 QPDFTokenizer EOF reading token 0
 QPDFTokenizer EOF reading appendable token 0
 QPDFWriter extra header text no newline 0
-QPDF global offset 0
 QPDFWriter make Extensions direct 0
 QPDFWriter make ADBE direct 1
 QPDFWriter preserve Extensions 0
@@ -148,11 +136,7 @@ QPDFJob pages range omitted in middle 0
 QPDFWriter standard deterministic ID 1
 QPDFWriter linearized deterministic ID 1
 qpdf-c called qpdf_set_deterministic_ID 0
-QPDFParser invalid objgen 0
-QPDFParser treat word as string 0
-QPDFParser treat word as string in parseRemainder 0
 QPDFParser found fake 1
-QPDFParser no val for last key 0
 QPDFObjectHandle errors in parsecontent 0
 QPDFJob split-pages %d 0
 QPDFJob split-pages .pdf 0
@@ -171,16 +155,7 @@ Pl_QPDFTokenizer found ID 0
 QPDFObjectHandle coalesce called on stream 0
 QPDFObjectHandle coalesce provide stream data 0
 QPDF_Stream bad token at end during normalize 0
-QPDFParser bad token in parse 0
-QPDFParser bad token in parseRemainder 0
-QPDFParser eof in parse 0
-QPDFParser eof in parseRemainder 0
 QPDFObjectHandle boolean returning false 0
-QPDFObjectHandle real returning 0.0 0
-QPDFObjectHandle string returning empty string 0
-QPDFObjectHandle string returning empty utf8 0
-QPDFObjectHandle operator returning fake value 0
-QPDFObjectHandle inlineimage returning empty data 0
 QPDFObjectHandle array treating as empty vector 0
 QPDFObjectHandle array ignoring replace items 0
 QPDFObjectHandle array ignoring insert item 0
@@ -190,26 +165,10 @@ QPDFObjectHandle array ignoring erase item 0
 QPDFObjectHandle dictionary false for hasKey 0
 QPDFObjectHandle dictionary empty set for getKeys 0
 QPDFObjectHandle dictionary empty map for asMap 0
-QPDFObjectHandle dictionary ignoring replaceKey 0
 QPDFObjectHandle numeric non-numeric 0
 QPDFObjectHandle erase array bounds 0
 qpdf-c called qpdf_check_pdf 0
-QPDFParser too deep 0
-QPDFFormFieldObjectHelper TU present 0
-QPDFFormFieldObjectHelper TM present 0
-QPDFFormFieldObjectHelper TU absent 0
-QPDFFormFieldObjectHelper TM absent 0
 QPDFFormFieldObjectHelper Q present 1
-QPDFFormFieldObjectHelper DA present 1
-QPDFAnnotationObjectHelper AP stream 0
-QPDFAnnotationObjectHelper AP dictionary 0
-QPDFAnnotationObjectHelper AP sub stream 0
-QPDFAnnotationObjectHelper AP null 0
-QPDFAcroFormDocumentHelper fields not array 0
-QPDFAcroFormDocumentHelper orphaned widget 0
-QPDFAcroFormDocumentHelper direct field 0
-QPDFAcroFormDocumentHelper non-dictionary field 0
-QPDFAcroFormDocumentHelper loop 0
 QPDFAcroFormDocumentHelper field found 1
 QPDFAcroFormDocumentHelper annotation found 1
 QPDFJob automatically set keep files open 1
@@ -224,19 +183,10 @@ QPDFAnnotationObjectHelper default matrix 0
 QPDFAnnotationObjectHelper rotate 90 0
 QPDFAnnotationObjectHelper rotate 180 0
 QPDFAnnotationObjectHelper rotate 270 0
-QPDFPageDocumentHelper skip widget need appearances 0
-QPDFPageDocumentHelper merge DR 0
 QPDFPageDocumentHelper non-widget annotation 0
-QPDFPageDocumentHelper remove annots 0
-QPDFPageDocumentHelper replace indirect annots 0
-QPDFPageDocumentHelper replace direct annots 0
 QPDFObjectHandle replace with copy 0
-QPDFPageDocumentHelper indirect as resources 0
 QPDFAnnotationObjectHelper forbidden flags 0
 QPDFAnnotationObjectHelper missing required flags 0
-QPDFFormFieldObjectHelper checkbox kid widget 0
-QPDFFormFieldObjectHelper set checkbox AS 0
-QPDFObjectHandle broken checkbox 0
 QPDFFormFieldObjectHelper list not found 0
 QPDFFormFieldObjectHelper list found 0
 QPDFFormFieldObjectHelper list first too low 0
@@ -244,7 +194,7 @@ QPDFFormFieldObjectHelper list last too high 0
 QPDFJob image optimize no pipeline 0
 QPDFJob image optimize no shrink 0
 QPDFJob image optimize too small 0
-QPDF pipe foreign encrypted stream 0
+QPDF pipe foreign encrypted stream 1
 QPDFJob copy same page more than once 1
 QPDFPageObjectHelper bad token finding names 0
 QPDFJob password mode bytes 0
@@ -254,8 +204,6 @@ QPDFJob password not encodable 0
 QPDFJob auto-encode password 0
 QPDFJob bytes fallback warning 0
 QPDFJob invalid utf-8 in auto 0
-QPDFJob input password hex-bytes 0
-QPDFPageDocumentHelper ignore annotation with no appearance 0
 QPDFFormFieldObjectHelper replaced BMC at EOF 0
 QPDFFormFieldObjectHelper fallback Tf 0
 QPDFPageObjectHelper copy shared attribute 1
@@ -270,21 +218,14 @@ QPDFJob image optimize bits per component 0
 QPDF eof skipping spaces before xref 1
 QPDF_encryption user matches owner V < 5 0
 QPDF_encryption same password 1
-QPDFParser duplicate dict key 0
 QPDFWriter no encryption sig contents 0
 QPDFPageObjectHelper colorspace lookup 0
 QPDFPageObjectHelper filter form xobject 0
 QPDFJob found resources in non-leaf 0
 QPDFJob found shared resources in leaf 0
 QPDFJob found shared xobject in leaf 0
-QPDF copy foreign with data 1
-QPDF copy foreign with foreign_stream 1
 QPDFObjectHandle need_newline 1
 QPDFJob pages range omitted with . 0
-qpdf-c invalid object handle 0
-qpdf-c called qpdf_oh_release 0
-qpdf-c called qpdf_oh_release_all 0
-qpdf-c called qpdf_new_object 0
 qpdf-c called qpdf_get_trailer 0
 qpdf-c called qpdf_get_root 0
 qpdf-c called qpdf_oh_is_bool 0
@@ -365,8 +306,6 @@ QPDFPageObjectHelper::forEachXObject 3
 NNTree erased last kid/item in tree 1
 QPDFPageObjectHelper unresolved names 0
 QPDFPageObjectHelper resolving unresolved 0
-QPDFFileSpecObjectHelper empty compat_name 0
-QPDFFileSpecObjectHelper non-empty compat_name 0
 QPDFAcroFormDocumentHelper copy annotation 3
 QPDFAcroFormDocumentHelper field with parent 3
 QPDFObjectHandle merge reuse 0
@@ -383,10 +322,7 @@ qpdf-c registered progress reporter 0
 qpdf-c called qpdf_oh_new_uninitialized 0
 qpdf-c warn about oh error 1
 qpdf-c cleanup warned about unhandled error 0
-qpdf-c called qpdf_get_object_by_id 0
 qpdf-c called qpdf_replace_object 0
-qpdf-c called qpdf_num_pages 0
-qpdf-c called qpdf_get_page_n 0
 qpdf-c called qpdf_update_all_pages_cache 0
 qpdf-c called qpdf_find_page_by_id 0
 qpdf-c called qpdf_find_page_by_oh 0
@@ -424,14 +360,9 @@ qpdf-c called qpdf_empty_pdf 0
 QPDF_json missing qpdf 0
 QPDF_json missing pdf version 0
 QPDF_json top-level scalar 0
-QPDF_json bad pdf version 0
 QPDF_json top-level array 0
-QPDF_json bad object key 0
-QPDF_json trailer stream 0
 QPDF_json missing trailer 0
 QPDF_json missing objects 0
-QPDF_json ignoring in st_ignore 0
-QPDF_json stream dict not dict 0
 QPDF_json unrecognized string value 0
 QPDF_json data datafile both or neither 0
 QPDF_json stream no dict 0
@@ -440,25 +371,13 @@ QPDF_json value stream both or neither 0
 QPDFJob need json-stream-prefix for stdout 0
 QPDFJob write json to stdout 0
 QPDFJob write json to file 0
-QPDF_json ignoring unknown top-level key 0
-QPDF_json ignore second-level key 0
-QPDF_json ignore unknown key in object_top 0
-QPDF_json ignore unknown key in trailer 0
-QPDF_json ignore unknown key in stream 0
 QPDF_json data and datafile 0
 QPDF_json no stream data in update mode 0
 QPDF_json updating existing stream 0
-QPDF_json qpdf not array 0
 QPDF_json more than two qpdf elements 0
 QPDF_json missing json version 0
-QPDF_json bad json version 0
-QPDF_json bad calledgetallpages 0
-QPDF_json bad pushedinheritedpageresources 0
 QPDFPageObjectHelper used fallback without copying 0
 QPDF skipping cache for known unchecked object 0
 QPDF recover xref stream 0
 QPDFJob json over/under no file 0
 QPDF_Array copy 1
-QPDF_json stream data not string 0
-QPDF_json stream datafile not string 0
-QPDF_json stream not a dictionary 0

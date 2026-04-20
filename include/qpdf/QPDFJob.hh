@@ -1,5 +1,5 @@
 // Copyright (c) 2005-2021 Jay Berkenbilt
-// Copyright (c) 2022-2025 Jay Berkenbilt and Manfred Holger
+// Copyright (c) 2022-2026 Jay Berkenbilt and Manfred Holger
 //
 // This file is part of qpdf.
 //
@@ -180,7 +180,7 @@ class QPDFJob
     //   needed, which you can't do with references. Returning pointers instead of references makes
     //   for a more uniform interface.
 
-    // Maintainer documentation: see the section in README-maintainer called "HOW TO ADD A
+    // Maintainer documentation: see the section in README-developer called "HOW TO ADD A
     // COMMAND-LINE ARGUMENT", which contains references to additional places in the documentation.
 
     class Config;
@@ -306,6 +306,24 @@ class QPDFJob
         Config* config;
     };
 
+    class GlobalConfig
+    {
+        friend class QPDFJob;
+        friend class Config;
+
+      public:
+        QPDF_DLL
+        Config* endGlobal();
+
+#include <qpdf/auto_job_c_global.hh>
+
+        GlobalConfig(Config*); // for qpdf internal use only
+        GlobalConfig(GlobalConfig const&) = delete;
+
+      private:
+        Config* config;
+    };
+
     class Config
     {
         friend class QPDFJob;
@@ -330,6 +348,8 @@ class QPDFJob
         std::shared_ptr<CopyAttConfig> copyAttachmentsFrom();
         QPDF_DLL
         std::shared_ptr<AttConfig> addAttachment();
+        QPDF_DLL
+        std::shared_ptr<GlobalConfig> global();
         QPDF_DLL
         std::shared_ptr<PagesConfig> pages();
         QPDF_DLL
@@ -460,7 +480,6 @@ class QPDFJob
         bool main_input);
 
     // Transformations
-    void setQPDFOptions(QPDF& pdf);
     void handlePageSpecs(QPDF& pdf);
     bool shouldRemoveUnreferencedResources(QPDF& pdf);
     void handleRotations(QPDF& pdf);
@@ -491,7 +510,7 @@ class QPDFJob
 
     // Output generation
     void doSplitPages(QPDF& pdf);
-    void setWriterOptions(QPDFWriter&);
+    void setWriterOptions(qpdf::Writer&);
     void setEncryptionOptions(QPDFWriter&);
     void maybeFixWritePassword(int R, std::string& password);
     void writeOutfile(QPDF& pdf);

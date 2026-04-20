@@ -56,7 +56,6 @@ QPDFArgParser::selectOptionTable(std::string const& name)
 {
     auto t = m->option_tables.find(name);
     if (t == m->option_tables.end()) {
-        QTC::TC("libtests", "QPDFArgParser select unregistered table");
         throw std::logic_error("QPDFArgParser: selecting unregistered option table " + name);
     }
     m->option_table = &(t->second);
@@ -67,7 +66,6 @@ void
 QPDFArgParser::registerOptionTable(std::string const& name, bare_arg_handler_t end_handler)
 {
     if (m->option_tables.contains(name)) {
-        QTC::TC("libtests", "QPDFArgParser register registered table");
         throw std::logic_error(
             "QPDFArgParser: registering already registered option table " + name);
     }
@@ -80,7 +78,6 @@ QPDFArgParser::OptionEntry&
 QPDFArgParser::registerArg(std::string const& arg)
 {
     if (m->option_table->contains(arg)) {
-        QTC::TC("libtests", "QPDFArgParser duplicate handler");
         throw std::logic_error(
             "QPDFArgParser: adding a duplicate handler for option " + arg + " in " +
             m->option_table_name + " option table");
@@ -138,7 +135,6 @@ QPDFArgParser::addInvalidChoiceHandler(std::string const& arg, param_arg_handler
 {
     auto i = m->option_table->find(arg);
     if (i == m->option_table->end()) {
-        QTC::TC("libtests", "QPDFArgParser invalid choice handler to unknown");
         throw std::logic_error(
             "QPDFArgParser: attempt to add invalid choice handler to unknown argument");
     }
@@ -187,13 +183,26 @@ QPDFArgParser::completionCommon(bool zsh)
         }
     }
     if (zsh) {
-        std::cout << "autoload -U +X bashcompinit && bashcompinit && ";
+        // FIXME: we assume progname doesn't contain single quote
+        // characters. 's in progname like in "/opt/joe's software/qpdf"
+        // should ideally be escaped as '\''. Unlikely to be a problem
+        // in practice. '...' is preferable over "..." as inside the
+        // latter more characters ("$`\) are a problem and it's
+        // virtually impossible to escape those in a locale-independent
+        // way.
+        std::cout << "complete -o bashdefault -o default -C '" << progname << "' " << m->whoami
+                  << "\n";
+    } else {
+        // we need a function wrapper that discards arguments to avoid
+        // leaking sensitive information in the process argument list
+        // which is public on most systems. Here putting the code on one
+        // line as old versions of the documentation were instructing
+        // users to do eval $(qpdf --completion-bash) instead of the
+        // correct eval "$(qpdf --completion-bash)"
+        std::cout << "qpdf_completer() { '" << progname << "'; }; "
+                  << "complete -o bashdefault -o default -o nospace -F qpdf_completer " << m->whoami
+                  << "\n";
     }
-    std::cout << "complete -o bashdefault -o default";
-    if (!zsh) {
-        std::cout << " -o nospace";
-    }
-    std::cout << " -C \"" << progname << "\" " << m->whoami << '\n';
     // Put output before error so calling from zsh works properly
     std::string path = progname;
     size_t slash = path.find('/');
@@ -380,9 +389,19 @@ QPDFArgParser::checkCompletion()
         if (p > m->bash_line.length()) {
             p = m->bash_line.length();
         }
-        // Set bash_cur and bash_prev based on bash_line rather than relying on argv. This enables
-        // us to use bashcompinit to get completion in zsh too since bashcompinit sets COMP_LINE and
-        // COMP_POINT but doesn't invoke the command with options like bash does.
+        // Set bash_cur and bash_prev based on bash_line rather than relying on
+        // argv. Using argv is unsafe as process argument lists are public on
+        // most systems. zsh doesn't pass information there, and we actively
+        // discard them for bash with our qpdf_completer to avoid that
+        // information disclosure vulnerability. Both bash and zsh set
+        // COMP_LINE and COMP_POINT which we can rely on instead.
+        //
+        // FIXME. For both bash and zsh, COMP_POINT is an offset in terms of
+        // *characters*, with characters decoded as per the shell's own locale.
+        // Here we interpret it as a *byte* offset which means it won't work
+        // properly if there are multibyte characters to the left of the
+        // cursor, but saves us having to decode the command line (which is hard
+        // to do in the same way the shell does in all cases).
 
         // p is equal to length of the string. Walk backwards looking for the first separator.
         // bash_cur is everything after the last separator, possibly empty.
@@ -448,11 +467,9 @@ QPDFArgParser::parseArgs()
             // Special case for -- option, which is used to break out of subparsers.
             oep = m->option_table->find("--");
             end_option = true;
-            if (oep == m->option_table->end()) {
-                // This is registered automatically, so this can't happen.
-                throw std::logic_error("QPDFArgParser: -- handler not registered");
-            }
-        } else if ((arg[0] == '-') && (strcmp(arg, "-") != 0)) {
+            util::internal_error_if(
+                oep == m->option_table->end(), "QPDFArgParser: -- handler not registered");
+        } else if (arg[0] == '-' && strcmp(arg, "-") != 0) {
             ++arg;
             if (arg[0] == '-') {
                 // Be lax about -arg vs --arg
@@ -678,15 +695,12 @@ QPDFArgParser::addHelpTopic(
     std::string const& topic, std::string const& short_text, std::string const& long_text)
 {
     if (topic == "all") {
-        QTC::TC("libtests", "QPDFArgParser add reserved help topic");
         throw std::logic_error("QPDFArgParser: can't register reserved help topic " + topic);
     }
     if (topic.empty() || topic.at(0) == '-') {
-        QTC::TC("libtests", "QPDFArgParser bad topic for help");
         throw std::logic_error("QPDFArgParser: help topics must not start with -");
     }
     if (m->help_topics.contains(topic)) {
-        QTC::TC("libtests", "QPDFArgParser add existing topic");
         throw std::logic_error("QPDFArgParser: topic " + topic + " has already been added");
     }
 
@@ -701,17 +715,14 @@ QPDFArgParser::addOptionHelp(
     std::string const& short_text,
     std::string const& long_text)
 {
-    if (!((option_name.length() > 2) && (option_name.at(0) == '-') && (option_name.at(1) == '-'))) {
-        QTC::TC("libtests", "QPDFArgParser bad option for help");
+    if (!(option_name.length() > 2 && option_name.starts_with("--"))) {
         throw std::logic_error("QPDFArgParser: options for help must start with --");
     }
     if (m->option_help.contains(option_name)) {
-        QTC::TC("libtests", "QPDFArgParser duplicate option help");
         throw std::logic_error("QPDFArgParser: option " + option_name + " already has help");
     }
     auto ht = m->help_topics.find(topic);
     if (ht == m->help_topics.end()) {
-        QTC::TC("libtests", "QPDFArgParser add to unknown topic");
         throw std::logic_error(
             "QPDFArgParser: unable to add option " + option_name + " to unknown help topic " +
             topic);

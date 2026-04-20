@@ -1,5 +1,5 @@
 // Copyright (c) 2005-2021 Jay Berkenbilt
-// Copyright (c) 2022-2025 Jay Berkenbilt and Manfred Holger
+// Copyright (c) 2022-2026 Jay Berkenbilt and Manfred Holger
 //
 // This file is part of qpdf.
 //
@@ -225,22 +225,7 @@ class QPDFAcroFormDocumentHelper: public QPDFDocumentHelper
         std::set<QPDFObjGen>* new_fields = nullptr);
 
   private:
-    void analyze();
-    void traverseField(
-        QPDFObjectHandle field, QPDFObjectHandle parent, int depth, QPDFObjGen::set& visited);
-    QPDFObjectHandle getOrCreateAcroForm();
-    void adjustInheritedFields(
-        QPDFObjectHandle obj,
-        bool override_da,
-        std::string const& from_default_da,
-        bool override_q,
-        int from_default_q);
-    void adjustDefaultAppearances(
-        QPDFObjectHandle obj,
-        std::map<std::string, std::map<std::string, std::string>> const& dr_map);
-    void adjustAppearanceStream(
-        QPDFObjectHandle stream, std::map<std::string, std::map<std::string, std::string>> dr_map);
-
+    friend class QPDF::Doc;
     class Members;
 
     std::shared_ptr<Members> m;

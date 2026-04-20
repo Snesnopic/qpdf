@@ -1,5 +1,5 @@
 // Copyright (c) 2005-2021 Jay Berkenbilt
-// Copyright (c) 2022-2025 Jay Berkenbilt and Manfred Holger
+// Copyright (c) 2022-2026 Jay Berkenbilt and Manfred Holger
 //
 // This file is part of qpdf.
 //
@@ -43,7 +43,6 @@
 #include <qpdf/QPDFTokenizer.hh>
 
 class Pipeline;
-class QPDF;
 class QPDF_Array;
 class QPDF_Bool;
 class QPDF_Dictionary;
@@ -62,11 +61,14 @@ class QPDFTokenizer;
 class QPDFExc;
 class Pl_QPDFTokenizer;
 class QPDFMatrix;
-class QPDFParser;
+namespace qpdf::impl
+{
+    class Parser;
+}
 
 class QPDFObjectHandle: public qpdf::BaseHandle
 {
-    friend class QPDFParser;
+    friend class qpdf::impl::Parser;
 
   public:
     // This class is used by replaceStreamData.  It provides an alternative way of associating
@@ -1320,21 +1322,6 @@ class QPDFObjectHandle: public qpdf::BaseHandle
     getObj()
     {
         return obj;
-    }
-    std::shared_ptr<QPDFObject>
-    getObj() const
-    {
-        return obj;
-    }
-    QPDFObject*
-    getObjectPtr()
-    {
-        return obj.get();
-    }
-    QPDFObject* const
-    getObjectPtr() const
-    {
-        return obj.get();
     }
 
     void writeJSON(int json_version, JSON::Writer& p, bool dereference_indirect = false) const;

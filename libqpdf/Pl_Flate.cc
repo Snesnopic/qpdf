@@ -6,15 +6,19 @@
 
 #include <qpdf/QIntC.hh>
 #include <qpdf/QUtil.hh>
+#include <qpdf/Util.hh>
+#include <qpdf/global_private.hh>
 #include <qpdf/qpdf-config.h>
 
 #ifdef ZOPFLI
 # include <zopfli.h>
 #endif
 
+using namespace qpdf;
+
 namespace
 {
-    unsigned long long memory_limit_{0};
+    static unsigned long long const& memory_limit{global::Limits::flate_max_memory()};
 } // namespace
 
 int Pl_Flate::compression_level = Z_DEFAULT_COMPRESSION;
@@ -31,10 +35,9 @@ Pl_Flate::Members::Members(size_t out_bufsize, action_e action) :
     // development files available, which particularly helps in a Windows environment.
     zdata = new z_stream;
 
-    if (out_bufsize > UINT_MAX) {
-        throw std::runtime_error(
-            "Pl_Flate: zlib doesn't support buffer sizes larger than unsigned int");
-    }
+    util::no_ci_rt_error_if(
+        out_bufsize > UINT_MAX,
+        "Pl_Flate: zlib doesn't support buffer sizes larger than unsigned int");
 
     z_stream& zstream = *(static_cast<z_stream*>(this->zdata));
     zstream.zalloc = nullptr;
@@ -70,9 +73,7 @@ Pl_Flate::Pl_Flate(
     Pipeline(identifier, next),
     m(std::make_unique<Members>(QIntC::to_size(out_bufsize_int), action))
 {
-    if (!next) {
-        throw std::logic_error("Attempt to create Pl_Flate with nullptr as next");
-    }
+    util::assertion(next, "Attempt to create Pl_Flate with nullptr as next");
 }
 
 // Must be explicit and not inline -- see QPDF_DLL_CLASS in README-maintainer
@@ -81,13 +82,13 @@ Pl_Flate::~Pl_Flate() = default;
 unsigned long long
 Pl_Flate::memory_limit()
 {
-    return memory_limit_;
+    return ::memory_limit;
 }
 
 void
 Pl_Flate::memory_limit(unsigned long long limit)
 {
-    memory_limit_ = limit;
+    global::Limits::flate_max_memory(limit);
 }
 
 void
@@ -107,10 +108,8 @@ Pl_Flate::warn(char const* msg, int code)
 void
 Pl_Flate::write(unsigned char const* data, size_t len)
 {
-    if (!m->outbuf) {
-        throw std::logic_error(
-            this->identifier + ": Pl_Flate: write() called after finish() called");
-    }
+    util::assertion(
+        m->outbuf.get(), identifier + ": Pl_Flate: write() called after finish() called");
     if (m->zopfli_buf) {
         m->zopfli_buf->append(reinterpret_cast<char const*>(data), len);
         return;
@@ -131,9 +130,8 @@ Pl_Flate::write(unsigned char const* data, size_t len)
 void
 Pl_Flate::handleData(unsigned char const* data, size_t len, int flush)
 {
-    if (len > UINT_MAX) {
-        throw std::runtime_error("Pl_Flate: zlib doesn't support data blocks larger than int");
-    }
+    util::no_ci_rt_error_if(
+        len > UINT_MAX, "Pl_Flate: zlib doesn't support data blocks larger than int");
     z_stream& zstream = *(static_cast<z_stream*>(m->zdata));
     // zlib is known not to modify the data pointed to by next_in but doesn't declare the field
     // value const unless compiled to do so.
@@ -201,9 +199,9 @@ Pl_Flate::handleData(unsigned char const* data, size_t len, int flush)
                 }
                 uLong ready = QIntC::to_ulong(m->out_bufsize - zstream.avail_out);
                 if (ready > 0) {
-                    if (memory_limit_ && m->action != a_deflate) {
+                    if (::memory_limit && m->action != a_deflate) {
                         m->written += ready;
-                        if (m->written > memory_limit_) {
+                        if (m->written > ::memory_limit) {
                             throw std::runtime_error("PL_Flate memory limit exceeded");
                         }
                     }
@@ -216,7 +214,6 @@ Pl_Flate::handleData(unsigned char const* data, size_t len, int flush)
 
         default:
             checkError("data", err);
-            break;
         }
     }
 }
@@ -224,7 +221,7 @@ Pl_Flate::handleData(unsigned char const* data, size_t len, int flush)
 void
 Pl_Flate::finish()
 {
-    if (m->written > memory_limit_) {
+    if (m->written > ::memory_limit) {
         throw std::runtime_error("PL_Flate memory limit exceeded");
     }
     try {

@@ -9,6 +9,7 @@
 #include <qpdf/QPDF_private.hh>
 #include <qpdf/QTC.hh>
 #include <qpdf/QUtil.hh>
+#include <qpdf/Util.hh>
 
 #include <bit>
 #include <exception>
@@ -65,10 +66,8 @@ NNTreeIterator::updateIValue(bool allow_invalid)
     }
 
     if (item_number < 0 || !node) {
-        if (!allow_invalid) {
-            throw std::logic_error(
-                "attempt made to dereference an invalid name/number tree iterator");
-        }
+        util::assertion(
+            allow_invalid, "attempt made to dereference an invalid name/number tree iterator");
         return;
     }
     impl.error(node, "update ivalue: items array is too short");
@@ -168,7 +167,7 @@ NNTreeIterator::resetLimits(Dictionary a_node, std::list<PathElement>::iterator 
                 }
             }
             if (a_node != path.begin()->node) {
-                a_node.replaceKey("/Limits", Array({first, last}));
+                a_node.replace("/Limits", Array({first, last}));
             }
         }
 
@@ -210,9 +209,7 @@ NNTreeIterator::split(Dictionary to_split, std::list<PathElement>::iterator pare
     //   node: A
     //   item_number: 0
 
-    if (!valid()) {
-        throw std::logic_error("NNTreeIterator::split called an invalid iterator");
-    }
+    util::assertion(valid(), "NNTreeIterator::split called an invalid iterator");
 
     // Find the array we actually need to split, which is either this node's kids or items.
     Array kids = to_split["/Kids"];
@@ -228,13 +225,12 @@ NNTreeIterator::split(Dictionary to_split, std::list<PathElement>::iterator pare
         first_half = kids;
         n = nkids;
         key = "/Kids";
-    } else if (nitems > 0) {
+    } else {
+        util::assertion(nitems > 0, "NNTreeIterator::split called on invalid node");
         first_half = items;
         n = nitems;
         threshold *= 2;
         key = impl.itemsKey();
-    } else {
-        throw std::logic_error("NNTreeIterator::split called on invalid node");
     }
 
     if (n <= threshold) {
@@ -266,7 +262,7 @@ NNTreeIterator::split(Dictionary to_split, std::list<PathElement>::iterator pare
         new_kids.push_back(first_node);
         to_split.erase("/Limits"); // already shouldn't be there for root
         to_split.erase(impl.itemsKey());
-        to_split.replaceKey("/Kids", new_kids);
+        to_split.replace("/Kids", new_kids);
         if (is_leaf) {
             node = first_node;
         } else {
@@ -369,9 +365,7 @@ NNTreeIterator::remove()
 {
     // Remove this item, leaving the tree valid and this iterator pointing to the next item.
 
-    if (!valid()) {
-        throw std::logic_error("attempt made to remove an invalid iterator");
-    }
+    util::assertion(valid(), "attempt made to remove an invalid iterator");
     Array items = node[impl.itemsKey()];
     int nitems = static_cast<int>(items.size());
     if (std::cmp_greater(item_number + 2, nitems)) {
@@ -396,13 +390,12 @@ NNTreeIterator::remove()
             // the previous item.
             item_number -= 2;
             increment(false);
-        } else if (item_number < nitems) {
+        } else {
+            util::assertion(
+                item_number < nitems, "NNTreeIterator::remove: item_number > nitems after erase");
             // We don't have to do anything since the removed item's successor now occupies its
             // former location.
             updateIValue();
-        } else {
-            // We already checked to ensure this condition would not happen.
-            throw std::logic_error("NNTreeIterator::remove: item_number > nitems after erase");
         }
         return;
     }
@@ -446,7 +439,7 @@ NNTreeIterator::remove()
         if (parent == path.end()) {
             // We erased the very last item. Convert the root to an empty items array.
             element->node.erase("/Kids");
-            element->node.replaceKey(impl.itemsKey(), Array::empty());
+            element->node.replace(impl.itemsKey(), Array::empty());
             path.clear();
             setItemNumber(impl.tree_root, -1);
             return;
@@ -673,8 +666,8 @@ NNTreeImpl::repair()
     for (auto const& [key, value]: items) {
         repl.insert(key, value);
     }
-    tree_root.replaceKey("/Kids", new_node["/Kids"]);
-    tree_root.replaceKey(itemsKey(), new_node[itemsKey()]);
+    tree_root.replace("/Kids", new_node["/Kids"]);
+    tree_root.replace(itemsKey(), new_node[itemsKey()]);
 }
 
 NNTreeImpl::iterator
@@ -872,7 +865,7 @@ QPDFNameTreeObjectHelper::QPDFNameTreeObjectHelper(
 QPDFNameTreeObjectHelper
 QPDFNameTreeObjectHelper::newEmpty(QPDF& qpdf, bool auto_repair)
 {
-    return {qpdf.makeIndirectObject("<< /Names [] >>"_qpdf), qpdf, auto_repair};
+    return {qpdf.makeIndirectObject(Dictionary({{"/Names", Array::empty()}})), qpdf, auto_repair};
 }
 
 QPDFNameTreeObjectHelper::iterator::iterator(std::shared_ptr<NNTreeIterator> const& i) :
@@ -1068,7 +1061,7 @@ QPDFNumberTreeObjectHelper::QPDFNumberTreeObjectHelper(
 QPDFNumberTreeObjectHelper
 QPDFNumberTreeObjectHelper::newEmpty(QPDF& qpdf, bool auto_repair)
 {
-    return {qpdf.makeIndirectObject("<< /Nums [] >>"_qpdf), qpdf, auto_repair};
+    return {qpdf.makeIndirectObject(Dictionary({{"/Nums", Array::empty()}})), qpdf, auto_repair};
 }
 
 QPDFNumberTreeObjectHelper::iterator::iterator(std::shared_ptr<NNTreeIterator> const& i) :

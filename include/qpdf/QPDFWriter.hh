@@ -1,5 +1,5 @@
 // Copyright (c) 2005-2021 Jay Berkenbilt
-// Copyright (c) 2022-2025 Jay Berkenbilt and Manfred Holger
+// Copyright (c) 2022-2026 Jay Berkenbilt and Manfred Holger
 //
 // This file is part of qpdf.
 //
@@ -42,6 +42,11 @@
 #include <string>
 #include <string_view>
 #include <vector>
+
+namespace qpdf
+{
+    class Writer;
+}
 
 class QPDF;
 
@@ -440,6 +445,8 @@ class QPDFWriter
     class NewObjTable;
 
   private:
+    friend class qpdf::Writer;
+
     class Members;
 
     std::shared_ptr<Members> m;

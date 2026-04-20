@@ -2,6 +2,8 @@
 
 #include <qpdf/QIntC.hh>
 #include <qpdf/QTC.hh>
+#include <qpdf/Util.hh>
+#include <qpdf/global_private.hh>
 
 #include <csetjmp>
 #include <stdexcept>
@@ -10,6 +12,8 @@
 #if BITS_IN_JSAMPLE != 8
 # error "qpdf does not support libjpeg built with BITS_IN_JSAMPLE != 8"
 #endif
+
+using namespace qpdf;
 
 namespace
 {
@@ -37,9 +41,9 @@ namespace
         std::string msg;
     };
 
-    long memory_limit{0};
-    int scan_limit{0};
-    bool throw_on_corrupt_data{true};
+    long const& memory_limit{global::Limits::dct_max_memory()};
+    int const& scan_limit{global::Limits::dct_max_progressive_scans()};
+    bool const& throw_on_corrupt_data{global::Options::dct_throw_on_corrupt_data()};
 } // namespace
 
 static void
@@ -118,27 +122,25 @@ Pl_DCT::Pl_DCT(char const* identifier, Pipeline* next) :
     Pipeline(identifier, next),
     m(std::make_unique<Members>())
 {
-    if (!next) {
-        throw std::logic_error("Attempt to create Pl_DCT with nullptr as next");
-    }
+    util::assertion(next, "Attempt to create Pl_DCT with nullptr as next");
 }
 
 void
 Pl_DCT::setMemoryLimit(long limit)
 {
-    memory_limit = limit;
+    global::Limits::dct_max_memory(limit);
 }
 
 void
 Pl_DCT::setScanLimit(int limit)
 {
-    scan_limit = limit;
+    global::Limits::dct_max_progressive_scans(limit);
 }
 
 void
 Pl_DCT::setThrowOnCorruptData(bool treat_as_error)
 {
-    throw_on_corrupt_data = treat_as_error;
+    global::options::dct_throw_on_corrupt_data(treat_as_error);
 }
 
 Pl_DCT::Pl_DCT(
@@ -285,12 +287,10 @@ fill_buffer_input_buffer(j_decompress_ptr)
 static void
 skip_buffer_input_data(j_decompress_ptr cinfo, long num_bytes)
 {
-    if (num_bytes < 0) {
-        throw std::runtime_error(
-            "reading jpeg: jpeg library requested skipping a negative number of bytes");
-    }
+    util::no_ci_rt_error_if(
+        num_bytes < 0, "reading jpeg: jpeg library requested skipping a negative number of bytes");
     size_t to_skip = QIntC::to_size(num_bytes);
-    if ((to_skip > 0) && (to_skip <= cinfo->src->bytes_in_buffer)) {
+    if (to_skip > 0 && to_skip <= cinfo->src->bytes_in_buffer) {
         cinfo->src->next_input_byte += to_skip;
         cinfo->src->bytes_in_buffer -= to_skip;
     } else if (to_skip != 0) {
@@ -354,11 +354,10 @@ Pl_DCT::compress(void* cinfo_p)
     unsigned int width = cinfo->image_width * QIntC::to_uint(cinfo->input_components);
     size_t expected_size = QIntC::to_size(cinfo->image_height) *
         QIntC::to_size(cinfo->image_width) * QIntC::to_size(cinfo->input_components);
-    if (m->buf.size() != expected_size) {
-        throw std::runtime_error(
-            "Pl_DCT: image buffer size = " + std::to_string(m->buf.size()) +
+    util::no_ci_rt_error_if(
+        m->buf.size() != expected_size,
+        "Pl_DCT: image buffer size = " + std::to_string(m->buf.size()) +
             "; expected size = " + std::to_string(expected_size));
-    }
     JSAMPROW row_pointer[1];
     auto buffer = reinterpret_cast<unsigned char*>(m->buf.data());
     while (cinfo->next_scanline < cinfo->image_height) {
@@ -394,7 +393,7 @@ Pl_DCT::decompress(void* cinfo_p)
     jpeg_calc_output_dimensions(cinfo);
     unsigned int width = cinfo->output_width * QIntC::to_uint(cinfo->output_components);
     if (memory_limit > 0 &&
-        width > (static_cast<unsigned long>(memory_limit) / (20U * cinfo->output_height))) {
+        width > (static_cast<unsigned long>(memory_limit / 20) / cinfo->output_height)) {
         // Even if jpeglib does not run out of memory, qpdf will while buffering the data before
         // writing it. Furthermore, for very large images runtime can be significant before the
         // first warning is encountered causing a timeout in oss-fuzz.

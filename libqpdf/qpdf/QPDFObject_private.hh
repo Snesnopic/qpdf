@@ -5,11 +5,12 @@
 // include/qpdf/QPDFObject.hh. See comments there for an explanation.
 
 #include <qpdf/Constants.h>
+#include <qpdf/Types.h>
+
 #include <qpdf/JSON.hh>
 #include <qpdf/JSON_writer.hh>
 #include <qpdf/QPDF.hh>
 #include <qpdf/QPDFObjGen.hh>
-#include <qpdf/Types.h>
 
 #include <map>
 #include <memory>
@@ -30,6 +31,12 @@ namespace qpdf
     class Integer;
     class Name;
     class Stream;
+    class String;
+
+    namespace impl
+    {
+        class Writer;
+    }
 } // namespace qpdf
 
 class QPDF_Array final
@@ -112,6 +119,7 @@ class QPDF_Dictionary final
 class QPDF_InlineImage final
 {
     friend class QPDFObject;
+    friend class QPDFObjectHandle;
     friend class qpdf::BaseHandle;
 
     explicit QPDF_InlineImage(std::string val) :
@@ -138,6 +146,7 @@ class QPDF_Integer final
 class QPDF_Name final
 {
     friend class QPDFObject;
+    friend class QPDFObjectHandle;
     friend class qpdf::BaseHandle;
     friend class qpdf::Name;
 
@@ -163,6 +172,7 @@ class QPDF_Null final
 class QPDF_Operator final
 {
     friend class QPDFObject;
+    friend class QPDFObjectHandle;
     friend class qpdf::BaseHandle;
 
     QPDF_Operator(std::string val) :
@@ -176,6 +186,7 @@ class QPDF_Operator final
 class QPDF_Real final
 {
     friend class QPDFObject;
+    friend class QPDFObjectHandle;
     friend class qpdf::BaseHandle;
 
     QPDF_Real(std::string val) :
@@ -256,20 +267,24 @@ class QPDF_String final
 {
     friend class QPDFObject;
     friend class qpdf::BaseHandle;
-    friend class QPDFWriter;
+    friend class qpdf::String;
+    friend class qpdf::impl::Writer;
 
   public:
-    static std::shared_ptr<QPDFObject> create_utf16(std::string const& utf8_val);
     std::string unparse(bool force_binary = false);
     void writeJSON(int json_version, JSON::Writer& p);
-    std::string getUTF8Val() const;
 
   private:
-    QPDF_String(std::string val) :
+    QPDF_String(std::string const& val) :
+        val(val)
+    {
+    }
+    QPDF_String(std::string&& val) :
         val(std::move(val))
     {
     }
     bool useHexString() const;
+
     std::string val;
 };
 
@@ -304,8 +319,6 @@ class QPDFObject
         return std::make_shared<QPDFObject>(
             qpdf, og, std::forward<T>(T(std::forward<Args>(args)...)));
     }
-
-    std::string getStringValue() const;
 
     // Return a unique type code for the resolved object
     inline qpdf_object_type_e getResolvedTypeCode() const;

@@ -1,5 +1,5 @@
 // Copyright (c) 2005-2021 Jay Berkenbilt
-// Copyright (c) 2022-2025 Jay Berkenbilt and Manfred Holger
+// Copyright (c) 2022-2026 Jay Berkenbilt and Manfred Holger
 //
 // This file is part of qpdf.
 //
@@ -51,7 +51,7 @@ namespace qpdf
     // QPDFObjGen and bool.
     class BaseHandle
     {
-        friend class QPDF;
+        friend class ::QPDF;
 
       public:
         explicit inline operator bool() const;
@@ -68,6 +68,9 @@ namespace qpdf
             return obj == other.obj;
         }
 
+        // Structural equivalence check per PDF Annex J rules.
+        bool equivalent_to(BaseHandle const& other, int depth = 10) const;
+
         // For arrays, return the number of items in the array.
         // For null-like objects, return 0.
         // For all other objects, return 1.
@@ -83,8 +86,11 @@ namespace qpdf
         QPDFObjectHandle operator[](size_t n) const;
         QPDFObjectHandle operator[](int n) const;
 
+        QPDFObjectHandle& at(std::string const& key) const;
         bool contains(std::string const& key) const;
         size_t erase(std::string const& key);
+        QPDFObjectHandle& find(std::string const& key) const;
+        bool replace(std::string const& key, QPDFObjectHandle value);
         QPDFObjectHandle const& operator[](std::string const& key) const;
 
         std::shared_ptr<QPDFObject> copy(bool shallow = false) const;
@@ -104,6 +110,9 @@ namespace qpdf
         static void warn(QPDF*, QPDFExc&&);
         void warn(QPDFExc&&) const;
         void warn(std::string const& warning) const;
+
+        inline std::shared_ptr<QPDFObject> const& obj_sp() const;
+        inline QPDFObjectHandle oh() const;
 
       protected:
         BaseHandle() = default;
@@ -126,8 +135,10 @@ namespace qpdf
 
         inline void assign(qpdf_object_type_e required, BaseHandle const& other);
         inline void assign(qpdf_object_type_e required, BaseHandle&& other);
+        inline void nullify();
 
         std::string description() const;
+        inline QPDFObjectHandle const& get(std::string const& key) const;
 
         void no_ci_warn_if(bool condition, std::string const& warning) const;
         void no_ci_stop_if(bool condition, std::string const& warning) const;
@@ -138,6 +149,9 @@ namespace qpdf
         char const* type_name() const;
 
         std::shared_ptr<QPDFObject> obj;
+
+      private:
+        inline QPDFObjectHandle referenced_object() const;
     };
 
 } // namespace qpdf

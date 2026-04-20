@@ -3,7 +3,10 @@
 Building and Installing qpdf
 ============================
 
-This chapter describes how to build and install qpdf.
+This chapter describes how to build and install qpdf. For information
+about installing a pre-built copy of qpdf, see
+[README.md](https://github.com/qpdf/qpdf/blob/main/README.md), the
+top-level README.md in the repository and source distribution.
 
 .. _prerequisites:
 
@@ -309,7 +312,7 @@ Options for Working on qpdf
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ENABLE_COVERAGE
-  Compile with ``--coverage``. See README-maintainer.md for
+  Compile with ``--coverage``. See README-developer.md for
   information about generating coverage reports.
 
 ENABLE_QTC

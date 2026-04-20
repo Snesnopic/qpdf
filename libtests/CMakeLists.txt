@@ -12,6 +12,7 @@ set(TEST_PROGRAMS
   dct_compress
   dct_uncompress
   flate
+  global
   hex
   input_source
   json
@@ -24,6 +25,7 @@ set(TEST_PROGRAMS
   md5
   nntree
   numrange
+  objects
   obj_table
   pdf_version
   pl_function
@@ -35,7 +37,8 @@ set(TEST_PROGRAMS
   rc4
   runlength
   sha2
-  sparse_array)
+  sparse_array
+  util)
 set(TEST_C_PROGRAMS
   logger_c)
 

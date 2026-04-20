@@ -7,7 +7,7 @@ cmake_minimum_required(VERSION 3.16)
 # also find the version number here. generate_auto_job also reads the
 # version from here.
 project(qpdf
-  VERSION 12.3.0
+  VERSION 12.4.0
   LANGUAGES C CXX)
 
 # Honor CMAKE_REQUIRED_LIBRARIES when checking for include files. This
@@ -169,6 +169,7 @@ endif()
 if(CXX_NEXT)
   set(CMAKE_CXX_STANDARD 23)
 else()
+  # See also build-scripts/check-headers
   set(CMAKE_CXX_STANDARD 20)
 endif()
 set(CMAKE_CXX_EXTENSIONS OFF)

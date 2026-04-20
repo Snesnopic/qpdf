@@ -6,6 +6,7 @@
 #include <qpdf/QPDFObject_private.hh>
 #include <qpdf/QPDF_private.hh>
 #include <qpdf/QUtil.hh>
+#include <qpdf/Util.hh>
 
 #include <concepts>
 #include <utility>
@@ -127,7 +128,7 @@ namespace qpdf
         // The following methods are not part of the public API.
         std::set<std::string> getKeys();
         std::map<std::string, QPDFObjectHandle> const& getAsMap() const;
-        void replaceKey(std::string const& key, QPDFObjectHandle value);
+        void replace(std::string const& key, QPDFObjectHandle value);
 
         using iterator = std::map<std::string, QPDFObjectHandle>::iterator;
         using const_iterator = std::map<std::string, QPDFObjectHandle>::const_iterator;
@@ -305,10 +306,10 @@ namespace qpdf
         explicit Integer(std::integral auto value) :
             Integer(static_cast<long long>(value))
         {
-            if constexpr (
-                std::numeric_limits<decltype(value)>::max() >
-                std::numeric_limits<long long>::max()) {
-                if (value > std::numeric_limits<long long>::max()) {
+            if constexpr (std::cmp_greater(
+                              std::numeric_limits<decltype(value)>::max(),
+                              std::numeric_limits<long long>::max())) {
+                if (std::cmp_greater(value, std::numeric_limits<long long>::max())) {
                     throw std::overflow_error("overflow constructing Integer");
                 }
             }
@@ -322,6 +323,12 @@ namespace qpdf
         Integer(QPDFObjectHandle&& oh) :
             BaseHandle(oh.type_code() == ::ot_integer ? std::move(oh) : QPDFObjectHandle())
         {
+        }
+
+        explicit
+        operator bool() const
+        {
+            return obj != nullptr;
         }
 
         // Return the integer value. If the object is not a valid Integer, throw a
@@ -345,6 +352,42 @@ namespace qpdf
         // std::invalid_argument exception.
         int64_t value() const;
 
+        // Return the integer value. If the object is not a valid integer, throw a
+        // std::invalid_argument exception. If the object is out of range for the target type,
+        // replicate the existing QPDFObjectHandle behavior.
+        template <std::integral T>
+        T
+        value() const
+        {
+            try {
+                return static_cast<T>(*this);
+            } catch (std::underflow_error&) {
+                if constexpr (std::is_same_v<T, int>) {
+                    warn("requested value of integer is too small; returning INT_MIN");
+                } else if constexpr (std::is_same_v<T, unsigned int>) {
+                    warn("unsigned integer value request for negative number; returning 0");
+                } else if constexpr (std::is_same_v<T, unsigned long long>) {
+                    warn("unsigned value request for negative number; returning 0");
+                } else {
+                    warn(
+                        "underflow while converting integer object; returning smallest possible "
+                        "value");
+                }
+                return std::numeric_limits<T>::min();
+            } catch (std::overflow_error&) {
+                if constexpr (std::is_same_v<T, int>) {
+                    warn("requested value of integer is too big; returning INT_MAX");
+                } else if constexpr (std::is_same_v<T, unsigned int>) {
+                    warn("requested value of unsigned integer is too big; returning UINT_MAX");
+                } else {
+                    warn(
+                        "overflow while converting integer object; returning largest possible "
+                        "value");
+                }
+                return std::numeric_limits<T>::max();
+            }
+        }
+
         // Return true if object value is equal to the 'rhs' value. Return false if the object is
         // not a valid Integer.
         friend bool
@@ -367,7 +410,7 @@ namespace qpdf
             return std::cmp_greater(lhs.value(), rhs) ? std::strong_ordering::greater
                                                       : std::strong_ordering::equal;
         }
-    };
+    }; // class Integer
 
     bool
     operator==(std::integral auto lhs, Integer const& rhs)
@@ -412,15 +455,15 @@ namespace qpdf
         {
         }
 
-        // Return the name value. If the object is not a valid Name, throw a
-        // std::invalid_argument exception.
+        // Return the name value. If the object is not a valid Name, throw a std::invalid_argument
+        // exception.
         operator std::string() const&
         {
             return value();
         }
 
-        // Return the integer value. If the object is not a valid integer, throw a
-        // std::invalid_argument exception.
+        // Return the name value. If the object is not a valid name, throw a std::invalid_argument
+        // exception.
         std::string const& value() const;
 
         // Return true if object value is equal to the 'rhs' value. Return false if the object is
@@ -431,6 +474,39 @@ namespace qpdf
             return lhs && lhs.value() == rhs;
         }
     };
+
+    class Null final: public BaseHandle
+    {
+      public:
+        // Unlike other types, the Null default constructor creates a valid null object.
+        Null() :
+            BaseHandle(QPDFObject::create<QPDF_Null>())
+        {
+        }
+
+        Null(Null const&) = default;
+        Null(Null&&) = default;
+        Null& operator=(Null const&) = default;
+        Null& operator=(Null&&) = default;
+        ~Null() = default;
+
+        // For legacy support, return a Null object to be used as a temporary return value.
+        static QPDFObjectHandle
+        temp()
+        {
+            return temp_.oh();
+        }
+
+        // For legacy support, return an explicit temporary Null object if oh is null.
+        static QPDFObjectHandle
+        if_null(QPDFObjectHandle oh)
+        {
+            return oh ? std::move(oh) : Null::temp();
+        }
+
+      private:
+        static const Null temp_;
+    }; // class Null
 
     class Stream final: public BaseHandle
     {
@@ -469,13 +545,63 @@ namespace qpdf
             qpdf_offset_t offset,
             size_t length);
 
-        Stream copy() const;
+        Stream copy();
+
+        void copy_data_to(Stream& target);
 
         Dictionary
         getDict() const
         {
             return {stream()->stream_dict};
         }
+
+        /// @brief Returns the stream dictionary's `/Length` entry.
+        ///
+        /// @return A typed Integer handle for `/Length`, or an invalid Integer if not present.
+        Integer
+        Length() const
+        {
+            return {getDict()["/Length"]};
+        }
+
+        /// @brief Sets the stream dictionary's `/Length` entry.
+        ///
+        /// @param val The typed Integer handle to store as `/Length`.
+        void
+        Length(Integer val)
+        {
+            qpdf_expect(val);
+            getDict().replace("/Length", val);
+        }
+
+        /// @brief Sets the stream dictionary's `/Length` entry.
+        ///
+        /// @param val The value to store as `/Length`.
+        void
+        Length(std::integral auto val)
+        {
+            qpdf_expect(val >= 0);
+            getDict().replace("/Length", Integer(val));
+        }
+
+        /// @brief Returns the stream dictionary's `/Subtype` entry.
+        ///
+        /// @return A typed Name handle for `/Subtype`, or an invalid Name if not present.
+        Name
+        Subtype() const
+        {
+            return {getDict()["/Subtype"]};
+        }
+
+        /// @brief Returns the stream dictionary's `/Type` entry.
+        ///
+        /// @return A typed Name handle for `/Type`, or an invalid Name if not present.
+        Name
+        Type() const
+        {
+            return {getDict()["/Type"]};
+        }
+
         bool
         isDataModified() const
         {
@@ -587,7 +713,56 @@ namespace qpdf
         void warn(std::string const& message);
 
         static std::map<std::string, std::string> filter_abbreviations;
-    };
+    }; // class Stream
+
+    class String final: public BaseHandle
+    {
+      public:
+        String() = default;
+        String(String const&) = default;
+        String(String&&) = default;
+        String& operator=(String const&) = default;
+        String& operator=(String&&) = default;
+        ~String() = default;
+
+        explicit String(std::string const&);
+        explicit String(std::string&&);
+
+        String(QPDFObjectHandle const& oh) :
+            BaseHandle(oh.type_code() == ::ot_string ? oh : QPDFObjectHandle())
+        {
+        }
+
+        String(QPDFObjectHandle&& oh) :
+            BaseHandle(oh.type_code() == ::ot_string ? std::move(oh) : QPDFObjectHandle())
+        {
+        }
+
+        static String utf16(std::string const&);
+
+        // Return the string value. If the object is not a valid string, throw a
+        // std::invalid_argument exception.
+        operator std::string() const&
+        {
+            return value();
+        }
+
+        // Return the string value. If the object is not a valid string, throw a
+        // std::invalid_argument exception.
+        std::string const& value() const;
+
+        // Return the string value. If the object is not a valid string, throw a
+        // std::invalid_argument exception.
+        std::string utf8_value() const;
+
+        // Return true if object value is equal to the 'rhs' value. Return false if the object is
+        // not a valid String.
+        friend bool
+        operator==(String const& lhs, std::string_view rhs)
+        {
+            return lhs && lhs.value() == rhs;
+        }
+    }; // class String
 
     template <typename T>
     T*
@@ -617,6 +792,45 @@ namespace qpdf
     inline BaseHandle::BaseHandle(QPDFObjectHandle&& oh) :
         obj(std::move(oh.obj))
     {
+    }
+
+    inline std::shared_ptr<QPDFObject> const&
+    BaseHandle::obj_sp() const
+    {
+        return obj;
+    }
+
+    inline QPDFObjectHandle
+    BaseHandle::oh() const
+    {
+        return {obj};
+    }
+
+    /// @brief Retrieve the QPDFObjectHandle for the object referenced by a reference object.
+    ///
+    /// Look up and return the object from the document's object table using QPDF::getObject(). The
+    /// returned value is a QPDFObjectHandle that wraps the shared pointer to the underlying
+    /// QPDFObject held in the document's cache.
+    ///
+    /// @note We must perform the lookup because qpdf represents certain replacements using
+    ///       QPDF_Reference. In particular, `QPDF::makeIndirectObject` used to make the input
+    ///       object indirect and then return the original input object. To replicate that
+    ///       existing behavior the implementation now makes the input object indirect and
+    ///       returns it, while modifying the input object to become a reference to the
+    ///       newly-created indirect object. Looking up the resulting indirect object in the
+    ///       document's object table via `QPDF::getObject()` ensures callers receive the
+    ///       cached object and avoids surprises if the indirect object is subsequently
+    ///       replaced.
+    ///
+    /// @return The QPDFObjectHandle for the object referenced by a reference object.
+    ///
+    /// @since 12.3.3
+    inline QPDFObjectHandle
+    BaseHandle::referenced_object() const
+    {
+        qpdf_expect(resolved_type_code() == ::ot_reserved);
+        qpdf_expect(obj->qpdf);
+        return obj->qpdf->getObject(obj->og);
     }
 
     inline void
@@ -674,10 +888,32 @@ namespace qpdf
         }
     }
 
+    /// @brief Retrieves the QPDFObjectHandle const& associated with the given key.
+    ///
+    /// This method provides a convenience alternative to the direct use of the subscript operator
+    /// "(*this)[key]" or "oh()[key]" in derived classes, enabling a simplified and readable way to
+    /// access object handles by key.
+    ///
+    /// @param key The string key used to look up the corresponding QPDFObjectHandle.
+    /// @return A constant reference to the QPDFObjectHandle associated with the specified key.
+    inline QPDFObjectHandle const&
+    BaseHandle::get(std::string const& key) const
+    {
+        return (*this)[key];
+    }
+
     inline bool
     BaseHandle::null() const
     {
         return !obj || type_code() == ::ot_null;
+    }
+
+    inline void
+    BaseHandle::nullify()
+    {
+        if (obj) {
+            obj = QPDFObject::create<QPDF_Null>();
+        }
     }
 
     inline qpdf_offset_t
