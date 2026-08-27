@@ -94,7 +94,7 @@ set(DEFAULT_CRYPTO CACHE STRING "")
 option(DEFAULT_CRYPTO
   "Specify default crypto; otherwise chosen automatically" "")
 
-option(ZOPFLI, "Use zopfli for zlib-compatible compression")
+option(ZOPFLI "Use zopfli for zlib-compatible compression")
 
 # INSTALL_MANUAL is not dependent on building docs. When creating some
 # distributions, we build the doc in one run, copy doc-dist in, and
