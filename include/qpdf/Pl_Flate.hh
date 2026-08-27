@@ -86,6 +86,12 @@ class QPDF_DLL_CLASS Pl_Flate: public Pipeline
     QPDF_DLL
     static bool zopfli_check_env(QPDFLogger* logger = nullptr);
 
+    // Globally set the number of zopfli iterations (effort level) used when
+    // zopfli is enabled. Has no effect otherwise. Defaults to zopfli's own
+    // default of 15; higher is slower and smaller, lower is faster.
+    QPDF_DLL
+    static void setZopfliIterations(int);
+
   private:
     QPDF_DLL_PRIVATE
     void handleData(unsigned char const* data, size_t len, int flush);
@@ -98,6 +104,8 @@ class QPDF_DLL_CLASS Pl_Flate: public Pipeline
 
     QPDF_DLL_PRIVATE
     static int compression_level;
+    QPDF_DLL_PRIVATE
+    static int zopfli_iterations;
 
     class QPDF_DLL_PRIVATE Members
     {

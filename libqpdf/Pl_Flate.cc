@@ -22,6 +22,7 @@ namespace
 } // namespace
 
 int Pl_Flate::compression_level = Z_DEFAULT_COMPRESSION;
+int Pl_Flate::zopfli_iterations = 15;
 
 Pl_Flate::Members::Members(size_t out_bufsize, action_e action) :
     out_bufsize(out_bufsize),
@@ -263,6 +264,12 @@ Pl_Flate::setCompressionLevel(int level)
 }
 
 void
+Pl_Flate::setZopfliIterations(int iterations)
+{
+    zopfli_iterations = iterations;
+}
+
+void
 Pl_Flate::checkError(char const* prefix, int error_code)
 {
     z_stream& zstream = *(static_cast<z_stream*>(m->zdata));
@@ -318,6 +325,7 @@ Pl_Flate::finish_zopfli()
     auto buf = std::move(*m->zopfli_buf.release());
     ZopfliOptions z_opt;
     ZopfliInitOptions(&z_opt);
+    z_opt.numiterations = zopfli_iterations;
     unsigned char* out{nullptr};
     size_t out_size{0};
     ZopfliCompress(
