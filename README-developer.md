@@ -102,12 +102,13 @@ indicates the selected GCC installation is 14, so it is necessary to install `li
 You can use this for command-line builds, which does a bit more than the presets. The msvc presets
 are known to work in CLion if the environment is set up as described in
 [README-windows.md](./README-windows.md), but for regular command-line builds (and CI), continue to
-use `cmake-win` from inside a build directory. Look at `build-scripts/build-windows` to see how this
-is used.
+use `cmake-win` from inside a build directory. First, download external libraries from [the vcpkg-cache-v1 release](https://github.com/qpdf/qpdf/releases/tag/vcpkg-cache-v1) or run `./vcpkg-setup-win {msvc|mingw}`. Then, create a build directory, and from there, run
 
 ```
-../cmake-win {mingw|msvc} maint
+../cmake-win {mingw|msvc}
 ```
+
+Look at `build-scripts/build-windows` to see how this is used.
 
 ## CHECKING DOCS ON readthedocs
 
@@ -640,7 +641,14 @@ Adding a new option table is a bit harder and is not well-documented.
 For a simple example, look at the code that added the
 --set-page-labels table. That change was divided into two commits (one
 for the manual changes, and one for the generated changes) to make it
-easier to use as an example.
+easier to use as an example. Note that, when adding an options table,
+you must call selectOptionTable from the arg handler in
+QPDFJob_argv.cc *and you must also* set the triggers on job.yml. The
+triggers in job.yml is used to update the table state in the shell
+completion function code, but it is not used (as of 2026-04 when the
+completion code was rewritten) to change the actual argument state.
+Adding a test to completion.test to make sure completion for the new
+options table is a good idea.
 
 The build will fail until the new option is documented in
 manual/cli.rst. To do that, create documentation for the option by
@@ -683,7 +691,7 @@ python3 -m venv v
 source v/bin/activate
 cd pikepdf
 python3 -m pip install --upgrade pip
-python3 -m pip install '.[test]'
+python3 -m pip install . --group test
 rehash
 python3 -m pip install .
 pytest -n auto
@@ -714,7 +722,7 @@ rm -rf ../v
 python3 -m venv ../v
 source ../v/bin/activate
 python3 -m pip install --upgrade pip
-python3 -m pip install '.[test]'
+python3 -m pip install . --group test
 python3 -m pip install .
 pytest -n auto
 EOF
@@ -781,12 +789,16 @@ To declare something as deprecated:
 
 This is what I do for routine testing on Windows.
 
-* From Windows, git clone from my Linux clone, and unzip
-  `external-libs`.
-
 * Start a command-line shell for x86_64 and x86 tools from Visual
   studio. From there, start C:\msys64\mingw64 twice and
   C:\msys64\mingw32 twice.
+
+* From Windows, clone the repository, and unzip `vcpkg.zip`. To get
+  it, download it from
+  https://github.com/qpdf/qpdf/releases/tag/vcpkg-cache-v1 by picking
+  the newest artifact. Alternatively, run `./vcpkg-setup-win <tool>`,
+  where `<tool>` is either msvc or mingw. You can run this from all
+  four shells to get 32- and 64-bit versions for mingw and msvc.
 
 * Create a build directory for each of the four permutations. Then, in
   each build directory, run `../cmake-win <tool> maint`.
@@ -844,7 +856,8 @@ manual tests were done:
 
 We are using RelWithDebInfo for mingw and other non-Windows builds but
 Release for MSVC. There are linker warnings if MSVC is built with
-RelWithDebInfo when using external-libs.
+RelWithDebInfo when using external libraries that were built in
+Release mode.
 
 
 ## ABI checks
